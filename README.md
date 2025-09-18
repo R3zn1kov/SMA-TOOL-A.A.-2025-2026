@@ -96,7 +96,7 @@ python -m pip install --upgrade pip
 Per avviare l'applicazione Streamlit:
 
 ```bash
-streamlit run test.py
+streamlit run app.py
 ```
 
 L'applicazione sarà disponibile nel browser all'indirizzo:
