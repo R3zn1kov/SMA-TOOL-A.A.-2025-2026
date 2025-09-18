@@ -11,22 +11,27 @@ Applicazione Streamlit per l'analisi di contenuti da Google News e Reddit. Quest
 - Durante l'installazione, assicurati di selezionare "Add Python to PATH"
 - Verifica l'installazione aprendo il terminale e digitando: `python --version`
 
-#### 2. Installazione PyCharm Community Edition
+#### 2. Installazione Git
+- Scarica Git da [git-scm.com](https://git-scm.com/downloads)
+- Durante l'installazione su Windows, mantieni le impostazioni predefinite
+- Verifica l'installazione aprendo il terminale e digitando: `git --version`
+
+#### 3. Installazione PyCharm Community Edition
 - Scarica PyCharm Community Edition da [jetbrains.com](https://www.jetbrains.com/pycharm/download/)
 - Installa seguendo le istruzioni del sistema operativo
 
 ### Configurazione del progetto
 
-#### 3. Creazione progetto in PyCharm
+#### 4. Creazione progetto in PyCharm
 1. Apri PyCharm Community Edition
 2. Clicca su "New Project"
 3. Seleziona la cartella dove vuoi creare il progetto
 4. Assicurati che l'interprete Python sia correttamente impostato
 
-#### 4. Importazione del codice
+#### 5. Importazione del codice
 **Opzione A - Da GitHub (consigliata):**
 1. In PyCharm: VCS → Get from Version Control
-2. Inserisci l'URL della repository: `[URL_REPOSITORY]`
+2. Inserisci l'URL della repository: `https://github.com/R3zn1kov/SMA-TOOL-A.A.-2025-2026.git`
 3. Scegli la cartella di destinazione
 4. Clicca "Clone"
 
@@ -37,7 +42,7 @@ Applicazione Streamlit per l'analisi di contenuti da Google News e Reddit. Quest
 
 ### Configurazione dell'ambiente
 
-#### 5. Creazione dell'ambiente virtuale
+#### 6. Creazione dell'ambiente virtuale
 Apri il terminale in PyCharm (View → Tool Windows → Terminal) ed esegui:
 
 ```bash
@@ -51,14 +56,14 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-#### 6. Installazione dipendenze
+#### 7. Installazione dipendenze
 Con l'ambiente virtuale attivato, installa le dipendenze:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-#### 7. Avvio dell'applicazione
+#### 8. Avvio dell'applicazione
 Per avviare l'applicazione Streamlit:
 
 ```bash
