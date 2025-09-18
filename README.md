@@ -42,25 +42,54 @@ Applicazione Streamlit per l'analisi di contenuti da Google News e Reddit. Quest
 
 ### Configurazione dell'ambiente
 
-#### 6. Creazione dell'ambiente virtuale
+#### 6. Creazione e attivazione dell'ambiente virtuale
 Apri il terminale in PyCharm (View → Tool Windows → Terminal) ed esegui:
 
 ```bash
 # Creazione ambiente virtuale
 python -m venv venv
+```
 
-# Attivazione ambiente virtuale
-# Su Windows:
+**Attivazione ambiente virtuale (scegli il comando in base al tuo sistema):**
+
+**Windows - Command Prompt (cmd):**
+```cmd
 venv\Scripts\activate
-# Su macOS/Linux:
+```
+
+**Windows - PowerShell:**
+```powershell
+venv\Scripts\Activate.ps1
+```
+
+**Windows - Git Bash:**
+```bash
+source venv/Scripts/activate
+```
+
+**macOS/Linux:**
+```bash
 source venv/bin/activate
 ```
+
+**Nota:** Dopo l'attivazione, dovresti vedere `(venv)` all'inizio della riga di comando, indicando che l'ambiente virtuale è attivo.
 
 #### 7. Installazione dipendenze
 Con l'ambiente virtuale attivato, installa le dipendenze:
 
+**Metodo A - Usando requirements.txt (raccomandato):**
 ```bash
 pip install -r requirements.txt
+```
+
+**Metodo B - Installazione manuale (se PyCharm Community non supporta requirements.txt):**
+```bash
+pip install streamlit pandas requests beautifulsoup4 nltk parsel lxml
+```
+
+**In caso di errori, prova ad aggiornare pip prima:**
+```bash
+python -m pip install --upgrade pip
 ```
 
 #### 8. Avvio dell'applicazione
