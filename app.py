@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
-from reddit import RedditExtractor
-from google_news import GoogleNewsExtractor
+from tools import RedditExtractor, GoogleNewsExtractor
 
 # Streamlit App
 st.title("Reddit & Google News Textual Content Extractor")
