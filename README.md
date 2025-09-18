@@ -1,6 +1,6 @@
 # SMA TOOL A.A. 2025-2026
 
-Applicazione Streamlit per l'analisi di contenuti da diverse fonti web. Questa applicazione fornisce strumenti per raccogliere e analizzare dati da piattaforme online per scopi di ricerca e studio.
+Applicazione Streamlit per l'analisi di contenuti da Google News e Reddit. Questa applicazione fornisce strumenti per raccogliere e analizzare dati testuali da queste due piattaforme per scopi di ricerca e studio.
 
 ## 🚀 Guida all'installazione completa
 
