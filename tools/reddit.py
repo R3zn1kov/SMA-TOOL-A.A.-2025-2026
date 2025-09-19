@@ -49,6 +49,76 @@ class RedditExtractor:
         })
         self.request_timeout = request_timeout
 
+        # Enhanced rate limiting settings to prevent IP/bot blocking
+        self.base_delay = 3  # Increased base delay between requests
+        self.max_delay = 30  # Increased maximum delay for exponential backoff
+        self.backoff_factor = 2.0  # Increased multiplier for exponential backoff
+        self.retry_attempts = 5  # Increased number of retry attempts on failure
+        self.requests_count = 0  # Track number of requests made
+        self.session_start_time = time.time()  # Track session duration
+
+    def safe_request(self, url: str, delay_multiplier: float = 1.0) -> requests.Response:
+        """Make a safe request with rate limiting and retry logic"""
+        current_delay = self.base_delay * delay_multiplier
+
+        # Adaptive delay based on request count and session duration
+        self.requests_count += 1
+        session_duration = time.time() - self.session_start_time
+
+        # Increase delay for sustained scraping sessions
+        if self.requests_count > 50:
+            adaptive_delay = min(2.0, self.requests_count / 100)
+            current_delay += adaptive_delay
+
+        # Take longer breaks for extended sessions
+        if session_duration > 300:  # 5 minutes
+            current_delay *= 1.5
+
+        for attempt in range(self.retry_attempts):
+            try:
+                # Apply progressive delay between requests
+                if attempt > 0:
+                    current_delay = min(current_delay * self.backoff_factor, self.max_delay)
+                    log.info(f"Retry attempt {attempt + 1}, waiting {current_delay:.1f} seconds...")
+
+                time.sleep(current_delay)
+
+                # Log every 25th request to monitor scraping rate
+                if self.requests_count % 25 == 0:
+                    log.info(f"Made {self.requests_count} requests in {session_duration:.1f}s, avg rate: {self.requests_count/session_duration:.2f} req/s")
+
+                response = self.session.get(url, timeout=self.request_timeout)
+
+                # Check for rate limiting response codes
+                if response.status_code == 429:  # Too Many Requests
+                    log.warning(f"Rate limited on attempt {attempt + 1}, increasing delay...")
+                    current_delay *= 3  # More aggressive backoff
+                    if attempt < self.retry_attempts - 1:
+                        continue
+
+                # Check for other blocking indicators
+                if response.status_code in [403, 502, 503]:
+                    log.warning(f"Potential blocking detected (status {response.status_code}), backing off...")
+                    current_delay *= 2
+                    if attempt < self.retry_attempts - 1:
+                        continue
+
+                response.raise_for_status()
+                return response
+
+            except requests.exceptions.Timeout:
+                log.warning(f"Request timeout on attempt {attempt + 1}/{self.retry_attempts}")
+                if attempt == self.retry_attempts - 1:
+                    raise
+
+            except requests.exceptions.RequestException as e:
+                log.warning(f"Request failed on attempt {attempt + 1}/{self.retry_attempts}: {e}")
+                if attempt == self.retry_attempts - 1:
+                    raise
+
+        # This should not be reached due to the raise statements above
+        raise requests.exceptions.RequestException("All retry attempts failed")
+
     @staticmethod
     def normalize_text(text: str) -> str:
         """Normalize text by removing accents and handling special characters"""
@@ -437,7 +507,7 @@ class RedditExtractor:
             log.error(f"Error converting to old.reddit URL: {e}")
             return url
 
-    def get_subreddit_posts(self, subreddit: str, time_range: str = "week", sort: str = "hot", limit: int = 25) -> List[Dict]:
+    def get_subreddit_posts(self, subreddit: str, time_range: str = "week", sort: str = "hot", limit: int = 500) -> List[Dict]:
         """Get list of posts from a subreddit"""
         try:
             # Clean subreddit name
@@ -453,15 +523,12 @@ class RedditExtractor:
                 params = {"sort": sort}
 
             if limit > 25:
-                params["limit"] = min(limit, 100)  # Reddit's limit
+                params["limit"] = min(limit, 500)  # Increased limit
 
             url = f"{base_url}/.json?" + urlencode(params)
 
             log.info(f"Fetching subreddit posts from: {url}")
-            time.sleep(2)  # Rate limiting
-
-            response = self.session.get(url, timeout=self.request_timeout)
-            response.raise_for_status()
+            response = self.safe_request(url)
 
             data = response.json()
             posts = []
@@ -514,7 +581,7 @@ class RedditExtractor:
         return filtered_posts
 
     def extract_subreddit_comments(self, subreddit: str, time_range_days: int = 7, sort: str = "hot",
-                                max_posts: int = 10, max_comments_per_post: int = 50,
+                                max_posts: int = 500, max_comments_per_post: int = 5000,
                                 progress_callback=None) -> Dict:
         """Extract comments from multiple posts in a subreddit"""
         try:
@@ -522,7 +589,7 @@ class RedditExtractor:
 
             # Get posts from subreddit
             reddit_time_range = "week" if time_range_days <= 7 else ("month" if time_range_days <= 30 else "year")
-            posts = self.get_subreddit_posts(subreddit, reddit_time_range, sort, max_posts * 2)
+            posts = self.get_subreddit_posts(subreddit, reddit_time_range, sort, max_posts)
 
             if not posts:
                 return {"posts": [], "comments": [], "summary": {}}
@@ -582,9 +649,17 @@ class RedditExtractor:
                         })
                         log.warning(f"No comments found for post {i+1}")
 
-                    # Rate limiting between posts (increased for better reliability)
+                    # Enhanced rate limiting between posts to prevent IP/bot blocking
                     if i < len(posts) - 1:
-                        time.sleep(4)
+                        # Progressive delay based on number of posts processed
+                        base_delay = 4
+                        progressive_delay = min(base_delay + (i * 0.5), 15)  # Cap at 15 seconds
+                        time.sleep(progressive_delay)
+
+                        # Additional delay for every 10 posts to be extra safe
+                        if (i + 1) % 10 == 0:
+                            log.info(f"Processed {i + 1} posts, taking extended break...")
+                            time.sleep(20)
 
                 except Exception as e:
                     log.error(f"Error processing post {i+1}: {e}")
@@ -621,11 +696,7 @@ class RedditExtractor:
     def extract_reddit_post(self, url: str, sort: Union[str] = "new") -> Dict:
         """Extract subreddit post and comment data"""
         try:
-            # Add delay to avoid being blocked
-            time.sleep(2)
-
-            response = self.session.get(url, timeout=self.request_timeout)
-            response.raise_for_status()
+            response = self.safe_request(url)
 
             post_data = {}
             post_data["info"] = self.parse_post_info(response)
@@ -641,14 +712,11 @@ class RedditExtractor:
 
             # Remove limit parameter to get all comments
             if '?' in old_reddit_url:
-                bulk_comments_page_url = f"{old_reddit_url}&sort={sort}&limit=500"
+                bulk_comments_page_url = f"{old_reddit_url}&sort={sort}&limit=5000"
             else:
-                bulk_comments_page_url = f"{old_reddit_url}?sort={sort}&limit=500"
+                bulk_comments_page_url = f"{old_reddit_url}?sort={sort}&limit=5000"
 
-            # Add another delay before fetching comments
-            time.sleep(2)
-            response = self.session.get(bulk_comments_page_url, timeout=self.request_timeout)
-            response.raise_for_status()
+            response = self.safe_request(bulk_comments_page_url, delay_multiplier=1.5)
 
             post_data["comments"] = self.parse_post_comments(response)
 
@@ -658,13 +726,11 @@ class RedditExtractor:
                 try:
                     json_url = old_reddit_url.replace('old.reddit.com', 'www.reddit.com') + '.json'
                     if '?' in json_url:
-                        json_url += "&limit=500"
+                        json_url += "&limit=5000"
                     else:
-                        json_url += "?limit=500"
+                        json_url += "?limit=5000"
 
-                    time.sleep(2)
-                    json_response = self.session.get(json_url, timeout=self.request_timeout)
-                    json_response.raise_for_status()
+                    json_response = self.safe_request(json_url, delay_multiplier=2.0)
                     json_data = json_response.json()
 
                     json_comments = self.parse_reddit_json_comments(json_data)

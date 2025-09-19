@@ -70,7 +70,7 @@ else:  # Subreddit mode
         max_posts = st.number_input(
             "Numero massimo post:",
             min_value=1,
-            max_value=50,
+            max_value=500,
             value=10,
             key="max_posts"
         )
@@ -79,7 +79,7 @@ else:  # Subreddit mode
         max_comments_per_post = st.number_input(
             "Commenti per post:",
             min_value=5,
-            max_value=200,
+            max_value=5000,
             value=50,
             key="max_comments_per_post"
         )
