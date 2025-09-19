@@ -135,4 +135,4 @@ L'applicazione offre strumenti per:
 
 ## 🎓 Scopo didattico
 
-Questa applicazione è sviluppata per scopi didattici nell'ambito del corso SMA A.A. 2025-2026 per dimostrare tecniche di analisi dati e sviluppo di applicazioni web con Python.
+Questa applicazione è sviluppata per scopi didattici nell'ambito del corso SMA A.A. 2025-2026 per dimostrare tecniche di analisi dati per studi di Media Intelligence.
